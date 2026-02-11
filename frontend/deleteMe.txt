@@ -1,0 +1,3 @@
+Frontend folder.
+Flutter mobile application code only.
+Owner: [Khaishuen]
