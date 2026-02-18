@@ -1,28 +1,23 @@
-const functions = require('firebase-functions');
+// index.js
+const { onRequest } = require('firebase-functions/v2/https');
+const { setGlobalOptions } = require('firebase-functions/v2');
 const { analyzeImage, getMockResult } = require('./gemini');
 const { enrichResponse } = require('./enrichment');
 const config = require('./config');
 
-// NEW: Import secrets
-const { defineSecret } = require('firebase-functions/params');
-const geminiApiKey = defineSecret('GEMINI_API_KEY');
+// Set global options for all functions
+setGlobalOptions({
+  region: config.demo.region,
+  maxInstances: 10
+});
 
-exports.scan = functions
-  .region(config.demo.region)
-  .runWith({
+exports.scan = onRequest(
+  {
     timeoutSeconds: 30,
-    memory: '256MB'
-  })
-  .https.onRequest(async (req, res) => {
-    
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-      return res.status(204).send('');
-    }
-
+    memory: '256MiB',
+    cors: true
+  },
+  async (req, res) => {
     if (req.method !== 'POST') {
       return sendError(res, 'Method not allowed', 405);
     }
@@ -83,18 +78,22 @@ exports.scan = functions
       console.error('❌ Unexpected error:', error.message);
       return sendError(res, 'Processing failed', 500);
     }
-  });
+  }
+);
 
-exports.health = functions
-  .region(config.demo.region)
-  .runWith({ memory: '128MB' })
-  .https.onRequest((req, res) => {
+exports.health = onRequest(
+  { 
+    memory: '128MiB',
+    cors: true
+  },
+  (req, res) => {
     res.status(200).json({ 
       status: 'ok',
       region: config.demo.region,
       timestamp: new Date().toISOString() 
     });
-  });
+  }
+);
 
 function sendError(res, message, status = 400) {
   return res.status(status).json({
