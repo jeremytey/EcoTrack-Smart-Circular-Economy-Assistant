@@ -1,2 +1,7 @@
 node_modules/
 *.local
+.env
+.env.*
+*.log
+.firebase/
+EOF
